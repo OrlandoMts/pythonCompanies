@@ -1,6 +1,6 @@
 import json
 from django.views import View
-from .models import Company
+from .models import Company, Employee
 from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -76,4 +76,30 @@ class CompanyView(View):
             data={'message': "Company not found"}
         
         return JsonResponse(data, safe=False)
+
+
+class EmployeeView(View):
     
+    def get(self, request):
+        employees = list(Employee.objects.values())
+        if len(employees)>0:
+            data = {
+                'message': "Succes", 
+                'employees': employees
+            }
+        else:
+            data = {'message': "Without employees"}
+        
+        return JsonResponse(data)
+
+    
+    def post(self, request):
+        pass
+
+
+    def put(self, request):
+        pass
+
+
+    def delete(self, request):
+        pass
