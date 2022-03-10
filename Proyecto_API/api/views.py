@@ -1,4 +1,5 @@
 import json
+import pstats
 from django.views import View
 from .models import Company, Employee
 from django.http.response import JsonResponse
@@ -79,27 +80,83 @@ class CompanyView(View):
 
 
 class EmployeeView(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     
-    def get(self, request):
-        employees = list(Employee.objects.values())
-        if len(employees)>0:
-            data = {
-                'message': "Succes", 
-                'employees': employees
-            }
+    def get(self, request, id=0):
+        
+        if id>0:
+            employees = list(Employee.objects.filter(id=id).values())
+
+            if len(employees) > 0:
+                employee = employees[0]
+                data={
+                    'message': "Success",
+                    'employee': employee
+                }
+            else:
+                data = { 'message': "Employee not found"}
         else:
-            data = {'message': "Without employees"}
+            employees = list(Employee.objects.values())
+            if len(employees)>0:
+                data = {
+                    'message': "Succes", 
+                    'employees': employees
+                }
+            else:
+                data = {'message': "Without employees"}
         
         return JsonResponse(data)
 
     
     def post(self, request):
-        pass
+        jk = json.loads(request.body)
+        companies = list(Company.objects.values())
+        arrayIds = []
+        jkCompanyId = jk['companyId_id']
+
+        for companie in companies:
+            arrayIds.append(companie['id'])
+        
+        if jkCompanyId in arrayIds:
+            Employee.objects.create(name=jk['name'], lastName=jk['lastName'], age=jk['age'], companyId_id=jk['companyId_id'])
+            data = {'message': "Success, Employee registered."} 
+        else:
+            data = {'message': "Error, Companie not found."}
+
+        return JsonResponse(data)
 
 
-    def put(self, request):
-        pass
+    def put(self, request, id):
+        jk = json.loads(request.body)
+        employees = list(Employee.objects.filter(id=id).values())
+
+        if len(employees) > 0:
+            employee = Employee.objects.get(id=id)
+            employee.name = jk['name']
+            employee.lastName = jk['lastName']
+            employee.age = jk['age']
+            employee.save()
+            data = {
+                'message': "Success. Employee updated",
+                'employee': employee
+            }
+        else:
+            data = { 'message': "Employee not found"}
+
+        return JsonResponse(data, safe=False)    
 
 
-    def delete(self, request):
-        pass
+    def delete(self, request, id):
+        employee = list(Employee.objects.filter(id=id).values())
+
+        if len(employee) > 0:
+            Employee.objects.filter(id=id).delete()
+            data = { 'message': "Employee deleted"}
+        else:
+            data = { 'message': "Employee not found"}
+        
+        return JsonResponse(data, safe=False)
